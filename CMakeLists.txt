@@ -149,6 +149,8 @@ endif()
 
 # Dependencies
 
+find_package (VrvanaSDK REQUIRED)
+
 # Fix for not visible pthreads functions for linker with glibc 2.15
 if (UNIX AND NOT APPLE)
     find_package (Threads)
