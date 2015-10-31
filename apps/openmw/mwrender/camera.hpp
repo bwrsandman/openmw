@@ -20,7 +20,7 @@ namespace MWRender
     class Camera
     {
         struct CamData {
-            float pitch, yaw, offset;
+            float pitch, yaw, roll, offset;
         };
 
         MWWorld::Ptr mTrackingPtr;
@@ -69,6 +69,9 @@ namespace MWRender
 
         float getPitch();
         void setPitch(float angle);
+
+        float getRoll();
+        void setRoll(float angle);
 
         const std::string &getHandle() const;
 

@@ -464,6 +464,18 @@ namespace MWWorld
             virtual bool isWading(const MWWorld::Ptr &object) const;
             virtual bool isOnGround(const MWWorld::Ptr &ptr) const;
 
+            virtual float getYaw() const {
+                mRendering->getCamera()->getYaw();
+            }
+
+            virtual float getPitch() const {
+                return mRendering->getCamera()->getPitch();
+            }
+
+            virtual float getRoll() const {
+                return mRendering->getCamera()->getRoll();
+            }
+
             virtual void togglePOV() {
                 mRendering->togglePOV();
             }

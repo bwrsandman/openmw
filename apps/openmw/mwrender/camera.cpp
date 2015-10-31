@@ -37,9 +37,11 @@ namespace MWRender
 
         mPreviewCam.pitch = 0.f;
         mPreviewCam.yaw = 0.f;
+        mPreviewCam.roll = 0.f;
         mPreviewCam.offset = 400.f;
         mMainCam.pitch = 0.f;
         mMainCam.yaw = 0.f;
+        mMainCam.roll = 0.f;
         mMainCam.offset = 400.f;
     }
 
@@ -60,17 +62,22 @@ namespace MWRender
         if (adjust) {
             setYaw(getYaw() + rot.z);
             setPitch(getPitch() + rot.x);
+            setRoll(getRoll() + rot.y);
         } else {
             setYaw(rot.z);
             setPitch(rot.x);
+            setRoll(rot.y);
         }
 
+        Ogre::Quaternion yr(Ogre::Radian(getRoll()), Ogre::Vector3::UNIT_Y);
         Ogre::Quaternion xr(Ogre::Radian(getPitch() + Ogre::Math::HALF_PI), Ogre::Vector3::UNIT_X);
         Ogre::Quaternion orient = xr;
         if (mVanity.enabled || mPreviewMode) {
             Ogre::Quaternion zr(Ogre::Radian(getYaw()), Ogre::Vector3::UNIT_Z);
-            orient = zr * xr;
+            orient = zr * orient;
         }
+
+        orient = yr * orient;
 
         if (isFirstPerson())
             mCamera->getParentNode()->setOrientation(orient);
@@ -292,6 +299,27 @@ namespace MWRender
             mPreviewCam.pitch = angle;
         } else {
             mMainCam.pitch = angle;
+        }
+    }
+
+    float Camera::getRoll()
+    {
+        if(mVanity.enabled || mPreviewMode)
+            return mPreviewCam.roll;
+        return mMainCam.roll;
+    }
+
+    void Camera::setRoll(float angle)
+    {
+        if (angle > Ogre::Math::PI) {
+            angle -= Ogre::Math::TWO_PI;
+        } else if (angle < -Ogre::Math::PI) {
+            angle += Ogre::Math::TWO_PI;
+        }
+        if (mVanity.enabled || mPreviewMode) {
+            mPreviewCam.roll = angle;
+        } else {
+            mMainCam.roll = angle;
         }
     }
 

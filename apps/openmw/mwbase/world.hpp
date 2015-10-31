@@ -398,6 +398,9 @@ namespace MWBase
             virtual bool isUnderwater(const MWWorld::CellStore* cell, const Ogre::Vector3 &pos) const = 0;
             virtual bool isOnGround(const MWWorld::Ptr &ptr) const = 0;
 
+            virtual float getYaw() const = 0;
+            virtual float getPitch() const = 0;
+            virtual float getRoll() const = 0;
             virtual void togglePOV() = 0;
             virtual bool isFirstPerson() const = 0;
             virtual void togglePreviewMode(bool enable) = 0;

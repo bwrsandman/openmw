@@ -91,6 +91,9 @@ namespace MWWorld
         void yaw(float yaw);
         void pitch(float pitch);
         void roll(float roll);
+        void setYaw(float yaw);
+        void setPitch(float pitch);
+        void setRoll(float roll);
 
         bool wasTeleported() const;
         void setTeleported(bool teleported);

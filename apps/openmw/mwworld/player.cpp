@@ -136,20 +136,44 @@ namespace MWWorld
         ptr.getClass().getCreatureStats(ptr).setMovementFlag(MWMechanics::CreatureStats::Flag_Sneak, sneak);
     }
 
+    /// Yaw an additional amount
     void Player::yaw(float yaw)
     {
         MWWorld::Ptr ptr = getPlayer();
         ptr.getClass().getMovementSettings(ptr).mRotation[2] += yaw;
     }
+    /// Pitch an additional amount
     void Player::pitch(float pitch)
     {
         MWWorld::Ptr ptr = getPlayer();
         ptr.getClass().getMovementSettings(ptr).mRotation[0] += pitch;
     }
+    /// Roll an additional amount
     void Player::roll(float roll)
     {
         MWWorld::Ptr ptr = getPlayer();
         ptr.getClass().getMovementSettings(ptr).mRotation[1] += roll;
+    }
+    /// Set Yaw to a set amount
+    void Player::setYaw(float yaw)
+    {
+        MWWorld::Ptr ptr = getPlayer();
+        float worldYaw = MWBase::Environment::get().getWorld()->getYaw();
+        ptr.getClass().getMovementSettings(ptr).mRotation[2] = worldYaw + yaw;
+    }
+    /// Set Pitch to a set amount
+    void Player::setPitch(float pitch)
+    {
+        MWWorld::Ptr ptr = getPlayer();
+        float worldPitch = MWBase::Environment::get().getWorld()->getPitch();
+        ptr.getClass().getMovementSettings(ptr).mRotation[0] = worldPitch + pitch;
+    }
+    /// Set Roll to a set amount
+    void Player::setRoll(float roll)
+    {
+        MWWorld::Ptr ptr = getPlayer();
+        float worldRoll = MWBase::Environment::get().getWorld()->getRoll();
+        ptr.getClass().getMovementSettings(ptr).mRotation[1] = worldRoll + roll;
     }
 
     MWMechanics::DrawState_ Player::getDrawState()
