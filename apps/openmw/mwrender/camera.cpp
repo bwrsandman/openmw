@@ -15,8 +15,8 @@
 
 namespace MWRender
 {
-    Camera::Camera (Ogre::Camera *camera)
-    : mCamera(camera),
+    Camera::Camera (Ogre::Camera *cameraLeft, Ogre::Camera *cameraRight)
+    : mCamera{cameraLeft, cameraRight},
       mCameraNode(NULL),
       mCameraPosNode(NULL),
       mAnimation(NULL),
@@ -80,7 +80,8 @@ namespace MWRender
         orient = yr * orient;
 
         if (isFirstPerson())
-            mCamera->getParentNode()->setOrientation(orient);
+            for (int i=0; i<2; ++i)
+                mCamera[i]->getParentNode()->setOrientation(orient);
         else
             mCameraNode->setOrientation(orient);
     }
@@ -97,20 +98,31 @@ namespace MWRender
         node->setInheritScale(false);
         Ogre::SceneNode *posNode = node->createChildSceneNode();
         posNode->setInheritScale(false);
+        Ogre::SceneNode *eyeNode[2] = {
+            posNode->createChildSceneNode(Ogre::Vector3(-0.5f * IPD, 0.0f, 0.0f)),
+            posNode->createChildSceneNode(Ogre::Vector3(0.5f * IPD, 0.0f, 0.0f))
+        };
         if(mCameraNode)
         {
             node->setOrientation(mCameraNode->getOrientation());
             posNode->setPosition(mCameraPosNode->getPosition());
             mCameraNode->getCreator()->destroySceneNode(mCameraNode);
             mCameraNode->getCreator()->destroySceneNode(mCameraPosNode);
+            for (int i=0; i<2; ++i)
+                mCameraEyeNode[i]->getCreator()->destroySceneNode(mCameraEyeNode[i]);
         }
         mCameraNode = node;
         mCameraPosNode = posNode;
+        for (int i=0; i<2; ++i)
+            mCameraEyeNode[i] = eyeNode[i];
 
         if (!isFirstPerson())
         {
-            mCamera->detachFromParent();
-            mCameraPosNode->attachObject(mCamera);
+            for (int i=0; i<2; ++i)
+            {
+                mCamera[i]->detachFromParent();
+                mCameraEyeNode[i]->attachObject(mCamera[i]);
+            }
         }
 
         return mCameraPosNode;
@@ -379,7 +391,8 @@ namespace MWRender
         if(mAnimation && mAnimation != anim)
         {
             mAnimation->setViewMode(NpcAnimation::VM_Normal);
-            mAnimation->detachObjectFromBone(mCamera);
+            for(int i=0; i<2; ++i)
+                mAnimation->detachObjectFromBone(mCamera[i]);
         }
         mAnimation = anim;
 
@@ -388,28 +401,37 @@ namespace MWRender
 
     void Camera::processViewChange()
     {
-        mAnimation->detachObjectFromBone(mCamera);
-        mCamera->detachFromParent();
+        for(int i=0; i<2; ++i)
+        {
+            mAnimation->detachObjectFromBone(mCamera[i]);
+            mCamera[i]->detachFromParent();
+        }
 
         if(isFirstPerson())
         {
             mAnimation->setViewMode(NpcAnimation::VM_FirstPerson);
-            Ogre::TagPoint *tag = mAnimation->attachObjectToBone("Head", mCamera);
-            tag->setInheritOrientation(false);
+            Ogre::TagPoint *tag;
+            for (int i=0; i<2; ++i)
+            {
+                tag = mAnimation->attachObjectToBone("Head", mCamera[i], Ogre::Quaternion::IDENTITY, Ogre::Vector3(IPD * (i - 0.5f), 0.0f, 0.0f));
+                tag->setInheritOrientation(false);
+            }
         }
         else
         {
             mAnimation->setViewMode(NpcAnimation::VM_Normal);
-            mCameraPosNode->attachObject(mCamera);
+            for (int i=0; i<2; ++i)
+                mCameraEyeNode[i]->attachObject(mCamera[i]);
         }
         rotateCamera(Ogre::Vector3(getPitch(), 0.f, getYaw()), false);
     }
 
     void Camera::getPosition(Ogre::Vector3 &focal, Ogre::Vector3 &camera)
     {
-        mCamera->getParentSceneNode()->needUpdate(true);
+        for (int i=0; i<2; ++i)
+            mCamera[i]->getParentSceneNode()->needUpdate(true);
 
-        camera = mCamera->getRealPosition();
+        camera = 0.5f * (mCamera[0]->getRealPosition() + mCamera[1]->getRealPosition());
         focal = mCameraNode->_getDerivedPosition();
     }
 

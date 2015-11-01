@@ -23,11 +23,15 @@ namespace MWRender
             float pitch, yaw, roll, offset;
         };
 
+        /// Inter-pupillary distance, the distance between the center of the pupils of the two eyes
+        const float IPD = 0.0f;
+
         MWWorld::Ptr mTrackingPtr;
 
-        Ogre::Camera *mCamera;
+        Ogre::Camera *mCamera[2];
         Ogre::SceneNode *mCameraNode;
         Ogre::SceneNode *mCameraPosNode;
+        Ogre::SceneNode *mCameraEyeNode[2];
 
         NpcAnimation *mAnimation;
 
@@ -54,7 +58,7 @@ namespace MWRender
         void setPosition(float x, float y, float z);
 
     public:
-        Camera(Ogre::Camera *camera);
+        Camera(Ogre::Camera *cameraLeft, Ogre::Camera *cameraRight);
         ~Camera();
 
         /// Reset to defaults

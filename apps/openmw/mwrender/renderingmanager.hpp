@@ -194,7 +194,7 @@ public:
 
     void processChangedSettings(const Settings::CategorySettingVector& settings);
 
-    Ogre::Viewport* getViewport() { return mRendering.getViewport(); }
+    Ogre::Viewport* getViewport(bool right) { return mRendering.getViewport(right); }
 
     void worldToInteriorMapPosition (Ogre::Vector2 position, float& nX, float& nY, int &x, int& y);
     ///< see MWRender::LocalMap::worldToInteriorMapPosition

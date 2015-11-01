@@ -521,7 +521,7 @@ namespace MWWorld
 
     std::pair<float, std::string> PhysicsSystem::getFacedHandle(float queryDistance)
     {
-        Ray ray = mRender.getCamera()->getCameraToViewportRay(0.5, 0.5);
+        Ray ray = mRender.getAverageCameraViewportRay(0.5, 0.5);
 
         Ogre::Vector3 origin_ = ray.getOrigin();
         btVector3 origin(origin_.x, origin_.y, origin_.z);
@@ -537,7 +537,7 @@ namespace MWWorld
 
     std::vector < std::pair <float, std::string> > PhysicsSystem::getFacedHandles (float queryDistance)
     {
-        Ray ray = mRender.getCamera()->getCameraToViewportRay(0.5, 0.5);
+        Ray ray = mRender.getAverageCameraViewportRay(0.5, 0.5);
 
         Ogre::Vector3 origin_ = ray.getOrigin();
         btVector3 origin(origin_.x, origin_.y, origin_.z);
@@ -555,7 +555,7 @@ namespace MWWorld
 
     std::vector < std::pair <float, std::string> > PhysicsSystem::getFacedHandles (float mouseX, float mouseY, float queryDistance)
     {
-        Ray ray = mRender.getCamera()->getCameraToViewportRay(mouseX, mouseY);
+        Ray ray = mRender.getAverageCameraViewportRay(mouseX, mouseY);
         Ogre::Vector3 from = ray.getOrigin();
         Ogre::Vector3 to = ray.getPoint(queryDistance);
 
@@ -628,7 +628,7 @@ namespace MWWorld
 
     std::pair<bool, Ogre::Vector3> PhysicsSystem::castRay(float mouseX, float mouseY, Ogre::Vector3* normal, std::string* hit)
     {
-        Ogre::Ray ray = mRender.getCamera()->getCameraToViewportRay(
+        Ogre::Ray ray = mRender.getAverageCameraViewportRay(
             mouseX,
             mouseY);
         Ogre::Vector3 from = ray.getOrigin();

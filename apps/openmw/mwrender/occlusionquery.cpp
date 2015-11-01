@@ -163,7 +163,7 @@ void OcclusionQuery::update(float duration)
 
     // Adjust the position of the sun billboards according to camera viewing distance
     // we need to do this to make sure that _everything_ can occlude the sun
-    float dist = mRendering->getCamera()->getFarClipDistance();
+    float dist = mRendering->getFarClipDistance();
     if (dist==0) dist = 10000000;
     dist -= 1000; // bias
     dist /= 1000.f;

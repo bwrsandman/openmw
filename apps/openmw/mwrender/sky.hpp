@@ -112,7 +112,7 @@ namespace MWRender
     class SkyManager
     {
     public:
-        SkyManager(Ogre::SceneNode* root, Ogre::Camera* pCamera);
+        SkyManager(Ogre::SceneNode* root, Ogre::Camera *pLeftCamera, Ogre::Camera *pRightCamera);
         ~SkyManager();
 
         /// Attach weather particle effects to this scene node (should be the Camera's parent node)
@@ -199,7 +199,7 @@ namespace MWRender
         Moon* mMasser;
         Moon* mSecunda;
 
-        Ogre::Camera* mCamera;
+        Ogre::Camera* mCamera[2];
         Ogre::SceneNode* mRootNode;
         Ogre::SceneManager* mSceneMgr;
 

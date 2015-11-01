@@ -160,11 +160,11 @@ RenderingManager::RenderingManager(OEngine::Render::OgreRenderer& _rend, const b
     mObjects->setRootNode(mRootNode);
     mActors->setRootNode(mRootNode);
 
-    mCamera = new MWRender::Camera(mRendering.getCamera());
+    mCamera = new MWRender::Camera(mRendering.getCamera(false), mRendering.getCamera(true));
 
     mShadows = new Shadows(&mRendering);
 
-    mSkyManager = new SkyManager(mRootNode, mRendering.getCamera());
+    mSkyManager = new SkyManager(mRootNode, mRendering.getCamera(false), mRendering.getCamera(true));
 
     mOcclusionQuery = new OcclusionQuery(&mRendering, mSkyManager->getSunNode());
 
@@ -173,7 +173,7 @@ RenderingManager::RenderingManager(OEngine::Render::OgreRenderer& _rend, const b
     mDebugging = new Debugging(mRootNode, engine);
     mLocalMap = new MWRender::LocalMap(&mRendering, this);
 
-    mWater = new MWRender::Water(mRendering.getCamera(), this, mFallback);
+    mWater = new MWRender::Water(mRendering.getCamera(0), this, mFallback);
 
     setMenuTransparency(Settings::Manager::getFloat("menu transparency", "GUI"));
 }
@@ -240,7 +240,8 @@ bool RenderingManager::toggleWorld()
     mRenderWorld = !mRenderWorld;
 
     int visibilityMask = mRenderWorld ? ~int(0) : 0;
-    mRendering.getViewport()->setVisibilityMask(visibilityMask);
+    for (int i=0; i<2; ++i)
+        mRendering.getViewport(i)->setVisibilityMask(visibilityMask);
     return mRenderWorld;
 }
 
@@ -365,7 +366,7 @@ void RenderingManager::update (float duration, bool paused)
 
         btVector3 btOrig(orig.x, orig.y, orig.z);
         btVector3 btDest(dest.x, dest.y, dest.z);
-        std::pair<bool,float> test = mPhysicsEngine->sphereCast(mRendering.getCamera()->getNearClipDistance()*2.5f, btOrig, btDest);
+        std::pair<bool,float> test = mPhysicsEngine->sphereCast(mRendering.getCamera(0)->getNearClipDistance()*2.5f, btOrig, btDest);
         if(test.first)
             mCamera->setCameraDistance(test.second * orig.distance(dest), false, false);
     }
@@ -386,7 +387,7 @@ void RenderingManager::update (float duration, bool paused)
 
     Ogre::ControllerManager::getSingleton().setTimeFactor(paused ? 0.f : 1.f);
 
-    Ogre::Vector3 cam = mRendering.getCamera()->getRealPosition();
+    Ogre::Vector3 cam = 0.5f * (mRendering.getCamera(0)->getRealPosition() + mRendering.getCamera(1)->getRealPosition());
 
     applyFog(world->isUnderwater(player.getCell(), cam));
 
@@ -399,11 +400,14 @@ void RenderingManager::update (float duration, bool paused)
     if(paused)
         return;
 
-    mEffectManager->update(duration, mRendering.getCamera());
+    for (int i=0; i<2; ++i)
+    {
+        mEffectManager->update(duration, mRendering.getCamera(i));
 
-    mActors->update (mRendering.getCamera());
-    mPlayerAnimation->preRender(mRendering.getCamera());
-    mObjects->update (duration, mRendering.getCamera());
+        mActors->update (mRendering.getCamera(i));
+        mPlayerAnimation->preRender(mRendering.getCamera(i));
+        mObjects->update (duration, mRendering.getCamera(i));
+    }
 
     mSkyManager->update(duration);
 
@@ -481,14 +485,18 @@ bool RenderingManager::toggleRenderMode(int mode)
         return mDebugging->toggleRenderMode(mode);
     else if (mode == MWBase::World::Render_Wireframe)
     {
-        if (mRendering.getCamera()->getPolygonMode() == PM_SOLID)
+        // Default to setting all to solid if there is a case of only one camera in wireframe
+        if (mRendering.getCamera(0)->getPolygonMode() == PM_SOLID &&
+            mRendering.getCamera(1)->getPolygonMode() == PM_SOLID)
         {
-            mRendering.getCamera()->setPolygonMode(PM_WIREFRAME);
+            for (int i=0; i<2; ++i)
+                mRendering.getCamera(i)->setPolygonMode(PM_WIREFRAME);
             return true;
         }
         else
         {
-            mRendering.getCamera()->setPolygonMode(PM_SOLID);
+            for (int i=0; i<2; ++i)
+                mRendering.getCamera(i)->setPolygonMode(PM_SOLID);
             return false;
         }
     }
@@ -517,13 +525,13 @@ void RenderingManager::configureFog(const float density, const Ogre::ColourValue
     {
         mFogStart = 0;
         mFogEnd = std::numeric_limits<float>::max();
-        mRendering.getCamera()->setFarClipDistance (max);
+        mRendering.setFarClipDistance (max);
     }
     else
     {
         mFogStart = max / (density) * Settings::Manager::getFloat("fog start factor", "Viewing distance");
         mFogEnd = max / (density) * Settings::Manager::getFloat("fog end factor", "Viewing distance");
-        mRendering.getCamera()->setFarClipDistance (max / density);
+        mRendering.setFarClipDistance (max / density);
     }
 
 }
@@ -533,14 +541,14 @@ void RenderingManager::applyFog (bool underwater)
     if (!underwater)
     {
         mRendering.getScene()->setFog (FOG_LINEAR, mFogColour, 0, mFogStart, mFogEnd);
-        mRendering.getViewport()->setBackgroundColour (mFogColour);
+        mRendering.setBackgroundColour (mFogColour);
         mWater->setViewportBackground (mFogColour);
     }
     else
     {
         Ogre::ColourValue clv(0.090195f, 0.115685f, 0.12745f);
         mRendering.getScene()->setFog (FOG_LINEAR, Ogre::ColourValue(clv), 0, 0, 1000);
-        mRendering.getViewport()->setBackgroundColour (Ogre::ColourValue(clv));
+        mRendering.setBackgroundColour (Ogre::ColourValue(clv));
         mWater->setViewportBackground (Ogre::ColourValue(clv));
     }
 }
@@ -648,10 +656,10 @@ void RenderingManager::updateTerrain()
     if (mTerrain)
     {
         // Avoid updating with dims.getCenter for each cell. Player position should be good enough
-        mTerrain->update(mRendering.getCamera()->getRealPosition());
+        mTerrain->update(0.5f * (mRendering.getCamera(0)->getRealPosition() + mRendering.getCamera(1)->getRealPosition()));
         mTerrain->syncLoad();
         // need to update again so the chunks that were just loaded can be made visible
-        mTerrain->update(mRendering.getCamera()->getRealPosition());
+        mTerrain->update(0.5f * (mRendering.getCamera(0)->getRealPosition() + mRendering.getCamera(1)->getRealPosition()));
     }
 }
 
@@ -696,7 +704,7 @@ void RenderingManager::notifyWorldSpaceChanged()
 
 Ogre::Vector4 RenderingManager::boundingBoxToScreen(Ogre::AxisAlignedBox bounds)
 {
-    Ogre::Matrix4 mat = mRendering.getCamera()->getViewMatrix();
+    Ogre::Matrix4 mat = mRendering.getCamera(0)->getViewMatrix();
 
     const Ogre::Vector3* corners = bounds.getAllCorners();
 
@@ -780,7 +788,7 @@ void RenderingManager::processChangedSettings(const Settings::CategorySettingVec
         {
             sh::Factory::getInstance ().setGlobalSetting ("simple_water", Settings::Manager::getBool("shader", "Water") ? "false" : "true");
             rebuild = true;
-            mRendering.getViewport ()->setClearEveryFrame (true);
+            mRendering.setClearEveryFrame (true);
         }
         else if (it->second == "refraction" && it->first == "Water")
         {
@@ -972,15 +980,15 @@ void RenderingManager::screenshot(Image &image, int w, int h)
     Ogre::TexturePtr texture = Ogre::TextureManager::getSingleton().createManual(tempName,
         Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, Ogre::TEX_TYPE_2D, w, h, 0, Ogre::PF_R8G8B8, Ogre::TU_RENDERTARGET);
 
-    float oldAspect = mRendering.getCamera()->getAspectRatio();
-
-    mRendering.getCamera()->setAspectRatio(w / static_cast<float>(h));
+    float oldAspect = mRendering.getCamera(0)->getAspectRatio();
 
     Ogre::RenderTarget* rt = texture->getBuffer()->getRenderTarget();
-    Ogre::Viewport* vp = rt->addViewport(mRendering.getCamera());
-    vp->setBackgroundColour(mRendering.getViewport()->getBackgroundColour());
+    mRendering.getCamera(0)->setAspectRatio(w / static_cast<float>(h));
+    Ogre::Viewport* vp = rt->addViewport(mRendering.getCamera(0));
+    vp->setBackgroundColour(mRendering.getViewport(0)->getBackgroundColour());
     vp->setOverlaysEnabled(false);
-    vp->setVisibilityMask(mRendering.getViewport()->getVisibilityMask());
+    vp->setVisibilityMask(mRendering.getViewport(0)->getVisibilityMask());
+
     rt->update();
 
     Ogre::PixelFormat pf = rt->suggestPixelFormat();
@@ -992,7 +1000,7 @@ void RenderingManager::screenshot(Image &image, int w, int h)
     rt->copyContentsToMemory(image.getPixelBox()); // getPixelBox returns a box sharing the same memory as the image
 
     Ogre::TextureManager::getSingleton().remove(tempName);
-    mRendering.getCamera()->setAspectRatio(oldAspect);
+    mRendering.getCamera(0)->setAspectRatio(oldAspect);
 }
 
 void RenderingManager::addWaterRippleEmitter (const MWWorld::Ptr& ptr, float scale, float force)
@@ -1013,7 +1021,7 @@ void RenderingManager::updateWaterRippleEmitterPtr (const MWWorld::Ptr& old, con
 void RenderingManager::frameStarted(float dt, bool paused)
 {
     if (mTerrain)
-        mTerrain->update(mRendering.getCamera()->getRealPosition());
+        mTerrain->update(0.5f * (mRendering.getCamera(0)->getRealPosition() + mRendering.getCamera(1)->getRealPosition()));
 
     if (!paused)
         mWater->frameStarted(dt);
@@ -1045,7 +1053,7 @@ void RenderingManager::enableTerrain(bool enable)
                                                 Settings::Manager::getBool("shader", "Terrain"), Terrain::Align_XY);
             mTerrain->applyMaterials(Settings::Manager::getBool("enabled", "Shadows"),
                                      Settings::Manager::getBool("split", "Shadows"));
-            mTerrain->update(mRendering.getCamera()->getRealPosition());
+            mTerrain->update(mRendering.getCamera(0)->getRealPosition());
         }
         mTerrain->setVisible(true);
     }

@@ -246,7 +246,7 @@ unsigned int Moon::getPhaseInt() const
     return 0;
 }
 
-SkyManager::SkyManager(Ogre::SceneNode *root, Ogre::Camera *pCamera)
+SkyManager::SkyManager(Ogre::SceneNode *root, Ogre::Camera *pLeftCamera, Ogre::Camera *pRightCamera)
     : mCreated(false)
     , mMoonRed(false)
     , mIsStorm(false)
@@ -258,7 +258,7 @@ SkyManager::SkyManager(Ogre::SceneNode *root, Ogre::Camera *pCamera)
     , mSunGlare(NULL)
     , mMasser(NULL)
     , mSecunda(NULL)
-    , mCamera(pCamera)
+    , mCamera{pLeftCamera, pRightCamera}
     , mRootNode(NULL)
     , mSceneMgr(NULL)
     , mAtmosphereDay(NULL)
@@ -574,7 +574,7 @@ void SkyManager::update(float duration)
         // increase the strength of the sun glare effect depending
         // on how directly the player is looking at the sun
         Vector3 sun = mSunGlare->getPosition();
-        Vector3 cam = mCamera->getRealDirection();
+        Vector3 cam = 0.5f * (mCamera[2]->getRealDirection() + mCamera[1]->getRealDirection());
         const Degree angle = sun.angleBetween( cam );
         float val = 1- (angle.valueDegrees() / 180.f);
         val = (val*val*val*val)*6;
@@ -751,7 +751,8 @@ void SkyManager::setGlare(const float glare)
 Vector3 SkyManager::getRealSunPos()
 {
     if (!mCreated) return Vector3(0,0,0);
-    return mSun->getNode()->getPosition() + mCamera->getRealPosition();
+    Vector3 cam = 0.5f * (mCamera[2]->getRealDirection() + mCamera[1]->getRealDirection());
+    return mSun->getNode()->getPosition() + cam;
 }
 
 void SkyManager::sunEnable()

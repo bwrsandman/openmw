@@ -1225,13 +1225,15 @@ Ogre::AxisAlignedBox Animation::getWorldBounds()
 }
 
 
-Ogre::TagPoint *Animation::attachObjectToBone(const Ogre::String &bonename, Ogre::MovableObject *obj)
+Ogre::TagPoint *Animation::attachObjectToBone(const Ogre::String &bonename, Ogre::MovableObject *obj,
+                                              const Ogre::Quaternion &offsetOrientation,
+                                              const Ogre::Vector3 &offsetPosition)
 {
     Ogre::TagPoint *tag = NULL;
     Ogre::SkeletonInstance *skel = (mSkelBase ? mSkelBase->getSkeleton() : NULL);
     if(skel && skel->hasBone(bonename))
     {
-        tag = mSkelBase->attachObjectToBone(bonename, obj);
+        tag = mSkelBase->attachObjectToBone(bonename, obj, offsetOrientation, offsetPosition);
         mAttachedObjects[obj] = bonename;
     }
     return tag;

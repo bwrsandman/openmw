@@ -161,12 +161,15 @@ void OgreRenderer::createWindow(const std::string &title, const WindowSettings& 
 
     mScene = mRoot->createSceneManager(ST_GENERIC);
 
-    mCamera = mScene->createCamera("cam");
-
-    // Create one viewport, entire window
-    mView = mWindow->addViewport(mCamera);
-    // Alter the camera aspect ratio to match the viewport
-    mCamera->setAspectRatio(Real(mView->getActualWidth()) / Real(mView->getActualHeight()));
+    const static Ogre::String cam_names[2] = {"left_cam", "right_cam"};
+    for (int i=0; i < 2; ++i)
+    {
+        mCamera[i] = mScene->createCamera(cam_names[i]);
+        // Create one viewport, entire window
+        mView[i] = mWindow->addViewport(mCamera[i], i, i * 0.5, 0.0, 0.5, 1.0);
+        // Alter the camera aspect ratio to match the viewport
+        mCamera[i]->setAspectRatio(Real(mView[i]->getActualWidth()) / Real(mView[i]->getActualHeight()));
+    }
 }
 
 void OgreRenderer::setWindowGammaContrast(float gamma, float contrast)
@@ -200,23 +203,30 @@ void OgreRenderer::restoreWindowGammaRamp()
 
 void OgreRenderer::adjustCamera(float fov, float nearClip)
 {
-    mCamera->setNearClipDistance(nearClip);
-    mCamera->setFOVy(Degree(fov));
+    for (int i=0; i < 2; ++i)
+    {
+        mCamera[i]->setNearClipDistance(nearClip);
+        mCamera[i]->setFOVy(Degree(fov));
+    }
 }
 
 void OgreRenderer::adjustViewport()
 {
     // Alter the camera aspect ratio to match the viewport
-    if(mCamera != NULL)
+    for (int i=0; i < 2; ++i)
     {
-        mView->setDimensions(0, 0, 1, 1);
-        mCamera->setAspectRatio(Real(mView->getActualWidth()) / Real(mView->getActualHeight()));
+        if(mCamera[i] != NULL)
+        {
+            mView[i]->setDimensions(i * 0.5, 0.0, 0.5, 1.0);
+            mCamera[i]->setAspectRatio(Real(mView[i]->getActualWidth()) / Real(mView[i]->getActualHeight()));
+        }
     }
 }
 
 void OgreRenderer::setFov(float fov)
 {
-    mCamera->setFOVy(Degree(fov));
+    for (int i=0; i < 2; ++i)
+        mCamera[i]->setFOVy(Degree(fov));
 }
 
 void OgreRenderer::windowResized(int x, int y)
@@ -229,6 +239,44 @@ void OgreRenderer::windowResized(int x, int y)
         mWindowHeight = y;
         mOutstandingResize = true;
     }
+}
+
+float OgreRenderer::getNearClipDistance() const
+{
+    return 0.5f * (mCamera[0]->getNearClipDistance() + mCamera[1]->getNearClipDistance());
+}
+
+float OgreRenderer::getFarClipDistance() const
+{
+    return 0.5f * (mCamera[0]->getFarClipDistance() + mCamera[1]->getFarClipDistance());
+}
+
+void OgreRenderer::setFarClipDistance(float farDist)
+{
+    for (int i=0; i < 2; ++i)
+        mCamera[i]->setFarClipDistance(farDist);
+}
+
+Ray OgreRenderer::getAverageCameraViewportRay(float x, float y) const
+{
+    Ray rays[2] = {
+        mCamera[0]->getCameraToViewportRay(x, y),
+        mCamera[1]->getCameraToViewportRay(x, y)
+    };
+    return Ray(0.5f * (rays[0].getOrigin() + rays[1].getOrigin()),
+               0.5f * (rays[0].getDirection() + rays[1].getDirection()));
+}
+
+void OgreRenderer::setBackgroundColour(const ColourValue &colour)
+{
+    for (int i=0; i < 2; ++i)
+        mView[i]->setBackgroundColour(colour);
+}
+
+void OgreRenderer::setClearEveryFrame(bool clear, unsigned int buffers)
+{
+    for (int i=0; i < 2; ++i)
+        mView[i]->setClearEveryFrame(clear, buffers);
 }
 
 void OgreRenderer::setWindowListener(WindowSizeListener* listener)

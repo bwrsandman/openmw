@@ -69,9 +69,9 @@ void Shadows::recreate()
         mPSSMSetup = new PSSMShadowCameraSetup();
 
         // Make sure to keep this in sync with the camera's near clip distance!
-        mPSSMSetup->setSplitPadding(mRendering->getCamera()->getNearClipDistance());
+        mPSSMSetup->setSplitPadding(mRendering->getCamera(0)->getNearClipDistance());
 
-        mPSSMSetup->calculateSplitPoints(3, mRendering->getCamera()->getNearClipDistance(), mShadowFar);
+        mPSSMSetup->calculateSplitPoints(3, mRendering->getNearClipDistance(), mShadowFar);
 
         const Real adjustFactors[3] = {64, 64, 64};
         for (int i=0; i < 3; ++i)

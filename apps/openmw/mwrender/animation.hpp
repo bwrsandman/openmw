@@ -342,7 +342,9 @@ public:
     // Attaches the given object to a bone on this object's base skeleton. If the bone doesn't
     // exist, the object isn't attached and NULL is returned. The returned TagPoint is only
     // valid until the next setObjectRoot call.
-    Ogre::TagPoint *attachObjectToBone(const Ogre::String &bonename, Ogre::MovableObject *obj);
+    Ogre::TagPoint *attachObjectToBone(const Ogre::String &bonename, Ogre::MovableObject *obj,
+                                       const Ogre::Quaternion &offsetOrientation=Ogre::Quaternion::IDENTITY,
+                                       const Ogre::Vector3 &offsetPosition=Ogre::Vector3::ZERO);
     void detachObjectFromBone(Ogre::MovableObject *obj);
 };
 

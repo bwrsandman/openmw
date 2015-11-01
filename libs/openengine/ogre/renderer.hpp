@@ -57,8 +57,8 @@ namespace OEngine
             Ogre::RenderWindow *mWindow;
             SDL_Window *mSDLWindow;
             Ogre::SceneManager *mScene;
-            Ogre::Camera *mCamera;
-            Ogre::Viewport *mView;
+            Ogre::Camera *mCamera[2];
+            Ogre::Viewport *mView[2];
 
             OgreInit::OgreInit* mOgreInit;
 
@@ -77,8 +77,8 @@ namespace OEngine
             , mWindow(NULL)
             , mSDLWindow(NULL)
             , mScene(NULL)
-            , mCamera(NULL)
-            , mView(NULL)
+            , mCamera{NULL, NULL}
+            , mView{NULL, NULL}
             , mOgreInit(NULL)
             , mWindowListener(NULL)
             , mWindowWidth(0)
@@ -133,10 +133,17 @@ namespace OEngine
             Ogre::SceneManager *getScene() { return mScene; }
 
             /// Camera
-            Ogre::Camera *getCamera() { return mCamera; }
+            Ogre::Camera *getCamera(bool right) { return mCamera[int(right)]; }
+
+            float getNearClipDistance() const;
+            float getFarClipDistance() const;
+            void setFarClipDistance(float farDist);
+            Ogre::Ray getAverageCameraViewportRay(float x, float y) const;
 
             /// Viewport
-            Ogre::Viewport *getViewport() { return mView; }
+            Ogre::Viewport *getViewport(bool right) { return mView[int(right)]; }
+            void setBackgroundColour(const Ogre::ColourValue& colour);
+            void setClearEveryFrame(bool clear, unsigned int buffers = Ogre::FBT_COLOUR | Ogre::FBT_DEPTH);
 
             void setWindowListener(WindowSizeListener* listener);
 
