@@ -1,0 +1,24 @@
+compositor vr_distortion
+{
+    technique
+    {
+        // Render Scene into texture
+        texture SceneBuffer target_width target_height PF_A8R8G8B8
+
+        target SceneBuffer
+        {
+            input previous
+        }
+
+        target_output
+        {
+            input none
+
+            pass render_quad
+            {
+                material mat_vr_distortion
+                input 0 SceneBuffer
+            }
+        }
+    }
+}

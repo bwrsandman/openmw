@@ -13,6 +13,7 @@
 #include <OgreControllerManager.h>
 #include <OgreMeshManager.h>
 #include <OgreRenderTexture.h>
+#include <OgreCompositorManager.h> // for post-processing effects
 
 #include <SDL_video.h>
 
@@ -133,6 +134,12 @@ RenderingManager::RenderingManager(OEngine::Render::OgreRenderer& _rend, const b
     Ogre::MeshManager::getSingleton().setMemoryBudget(64*1024*1024);
 
     Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+    for (int i=0; i<2; ++i)
+    {
+        Ogre::CompositorManager::getSingleton().addCompositor(mRendering.getViewport(i), "vr_distortion");
+        Ogre::CompositorManager::getSingleton().setCompositorEnabled(mRendering.getViewport(i), "vr_distortion", true);
+    }
 
     // disable unsupported effects
     if (!Settings::Manager::getBool("shaders", "Objects"))

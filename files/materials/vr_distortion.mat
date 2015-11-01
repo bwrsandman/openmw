@@ -1,0 +1,14 @@
+material mat_vr_distortion
+{
+    pass
+    {
+        vertex_program transform_vertex
+        fragment_program vr_distortion_fragment
+
+        depth_check off
+
+        texture_unit SceneBuffer
+        {
+        }
+    }
+}
