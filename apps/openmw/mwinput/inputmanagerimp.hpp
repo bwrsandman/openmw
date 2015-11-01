@@ -47,6 +47,11 @@ namespace Files
     struct ConfigurationManager;
 }
 
+namespace vrv
+{
+    class Tracker;
+}
+
 #include <extern/oics/ICSChannelListener.h>
 #include <extern/oics/ICSInputControlSystem.h>
 
@@ -169,6 +174,8 @@ namespace MWInput
         float mTimeIdle;
 
         bool mMouseLookEnabled;
+        bool mVrLookEnabled;
+        vrv::Tracker* mVrTracker;
         bool mGuiCursorEnabled;
 
         bool mDetectingKeyboard;

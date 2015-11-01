@@ -14,6 +14,9 @@
 
 #include <SDL_version.h>
 
+#include <vrv/Sensors/Tracker.h>
+#include <vrv/Sensors/SimulationTracker.h>
+
 #include <openengine/ogre/renderer.hpp>
 
 #include "../engine.hpp"
@@ -117,6 +120,8 @@ namespace MWInput
         , mPreviewPOVDelay(0.f)
         , mTimeIdle(0.f)
         , mMouseLookEnabled(false)
+        , mVrLookEnabled(false)
+        , mVrTracker(new vrv::SimulationTracker())
         , mGuiCursorEnabled(true)
         , mDetectingKeyboard(false)
         , mOverencumberedMessageDelay(0.f)
@@ -184,6 +189,7 @@ namespace MWInput
                 //ICS_LOG(std::string("Unusable controller plugged in: ")+SDL_JoystickNameForIndex(i));
             }
 		}
+        mVrLookEnabled = mVrTracker->Start();
     }
 
     void InputManager::clear()
@@ -200,6 +206,10 @@ namespace MWInput
         delete mInputBinder;
 
         delete mInputManager;
+
+        if (mVrTracker->IsTracking())
+            mVrTracker->Stop();
+        delete mVrTracker;
     }
 
     void InputManager::setPlayerControlsEnabled(bool enabled)
@@ -429,7 +439,7 @@ namespace MWInput
                 MyGUI::InputManager::getInstance().injectMouseMove(static_cast<int>(mMouseX), static_cast<int>(mMouseY), mMouseWheel);
                 mInputManager->warpMouse(static_cast<int>(mMouseX), static_cast<int>(mMouseY));
             }
-            if (mMouseLookEnabled)
+            if (mMouseLookEnabled && !mVrLookEnabled)
             {
                 float xAxis = mInputBinder->getChannel(A_LookLeftRight)->getValue()*2.0f-1.0f;
                 float yAxis = mInputBinder->getChannel(A_LookUpDown)->getValue()*2.0f-1.0f;
@@ -447,6 +457,14 @@ namespace MWInput
                     mPlayer->pitch(rot[0]);
                 }
             }
+        }
+        else if (mVrLookEnabled)
+        {
+            vrv::Quaternion vrQuat = mVrTracker->GetOrientation();
+            Ogre::Quaternion ogreQuat = Ogre::Quaternion(vrQuat.w(), vrQuat.x(), vrQuat.y(), vrQuat.z());
+            mPlayer->setRoll((float)(ogreQuat.getRoll(false).valueRadians()));
+            mPlayer->setYaw((float)(ogreQuat.getYaw(false).valueRadians()));
+            mPlayer->setPitch((float)(ogreQuat.getPitch(false).valueRadians()));
         }
 
         // Disable movement in Gui mode
@@ -772,7 +790,7 @@ namespace MWInput
             MyGUI::InputManager::getInstance().injectMouseMove( int(mMouseX), int(mMouseY), mMouseWheel);
         }
 
-        if (mMouseLookEnabled && !mControlsDisabled)
+        if (mMouseLookEnabled && !mVrLookEnabled && !mControlsDisabled)
         {
             resetIdleTime();
 
